@@ -17,8 +17,9 @@ use bevy::{
     },
     image::{ImageSampler, ImageSamplerDescriptor},
     tasks::{AsyncComputeTaskPool, Task},
-    utils::HashMap,
+    // utils::HashMap,
 };
+use std::collections::HashMap;
 use futures_lite::future;
 use image::{imageops::FilterType, DynamicImage, ImageBuffer};
 
@@ -430,7 +431,7 @@ pub fn generate_mips_texture(
                 image.texture_descriptor.view_formats = &[];
             }
 
-            image.data = new_image_data;
+            image.data = Some(new_image_data);
             Ok(())
         }
         Err(e) => Err(e),
@@ -570,7 +571,7 @@ pub fn extract_mip_level(image: &Image, mip_level: u32) -> anyhow::Result<Image>
     };
 
     Ok(Image {
-        data: image.data[byte_offset..byte_offset + (width * block_size * height)].to_vec(),
+        data: Some(image.data.as_ref().unwrap()[byte_offset..byte_offset + (width * block_size * height)].to_vec()),
         texture_descriptor: new_descriptor,
         sampler: image.sampler.clone(),
         texture_view_descriptor: image.texture_view_descriptor.clone(),
@@ -644,25 +645,27 @@ pub fn try_into_dynamic(image: Image) -> anyhow::Result<DynamicImage> {
         TextureFormat::R8Unorm => ImageBuffer::from_raw(
             image.texture_descriptor.size.width,
             image.texture_descriptor.size.height,
-            image.data,
+            image.data.unwrap(),
         )
         .map(DynamicImage::ImageLuma8),
         TextureFormat::Rg8Unorm => ImageBuffer::from_raw(
             image.texture_descriptor.size.width,
             image.texture_descriptor.size.height,
-            image.data,
+            image.data.unwrap(),
         )
         .map(DynamicImage::ImageLumaA8),
         TextureFormat::Rgba8UnormSrgb => ImageBuffer::from_raw(
             image.texture_descriptor.size.width,
             image.texture_descriptor.size.height,
-            image.data,
+            // &image.data,
+            image.data.unwrap(),
         )
         .map(DynamicImage::ImageRgba8),
         TextureFormat::Rgba8Unorm => ImageBuffer::from_raw(
             image.texture_descriptor.size.width,
             image.texture_descriptor.size.height,
-            image.data,
+            // &image.data,
+            image.data.unwrap(),
         )
         .map(DynamicImage::ImageRgba8),
         // Throw and error if conversion isn't supported
